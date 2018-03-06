@@ -1,0 +1,3 @@
+{:require  [sound.chord]
+ :init-fns [sound.chord/init]
+ :preloads [devtools.preload]}
