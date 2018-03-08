@@ -2,6 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.test.check.generators :as gen]))
 
+
 (defn number
   "Parse str to js/Number, or nil."
   [v]

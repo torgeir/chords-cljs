@@ -5,7 +5,7 @@
                   [org.clojure/clojurescript "1.9.946"]
                   [org.clojure/core.async "0.4.474"]
 
-                  [quil "2.6.0"]
+                  [cljs-bach "0.3.0"]
 
                   ;; for spec generators
                   [org.clojure/test.check "0.9.0"]

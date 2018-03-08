@@ -1,58 +1,35 @@
 (ns sound.chord
-  (:require [sound.spec :refer [read-chord]]
-            [sound.notes :as notes]
-            [cljs.core.async :as async :include-macros true]))
+  (:require [sound.notes :refer [lookup]]))
 
 
-(defn round
-  "Rounds n to d decimals."
-  [d n]
-  (let [mul (Math/pow 10 d)
-        div #(/ % mul)]
-    (->> n (* mul) int div)))
+(def triad
+  {:first 1 :third 5 :fifth 8})
 
 
-(defn midi->hz
-  "Convert a midi note number to a frequency in hz."
-  [note]
-  (* 440.0
-     (Math/pow 2.0 (/ (- note notes/a4)
-                      12.0))))
+(defn- map-values [f map]
+  (into {} (for [[k v] map]
+             [k (f v)])))
 
 
-(defn read-chords
-  "Read key presses from chan and parse to chords. Buffers key presses for
-  creating chords consisting of multiple parts, or creates chord from the last
-  key."
-  [chan]
-  (let [state (atom {})
-        buf   (atom [])]
-    (async/go-loop []
-      (when-let [key (async/<! chan)]
-        (let [buffered (conj @buf key)]
-          (if-let [chord (read-chord buffered)]
-            (do (reset! state chord)
-                (reset! buf buffered))
-            (if-let [chord (read-chord key)]
-              (do (reset! state chord)
-                  (reset! buf [key]))
-              (swap! buf conj key))))
-        (recur)))
-    state))
+(defn chord [note]
+  (let [scale     (-> (:note note) lookup)
+        type-map  (into {} [(:type note)])
+        pitch-map (into {} [(:pitch note)])
+        is-minor  (:minor type-map)
+        is-sharp  (:sharp pitch-map)
+        is-flat   (:flat pitch-map)
+        triad     (cond
+                    is-sharp (map-values inc triad)
+                    is-flat  (map-values dec triad)
+                    :else    triad)]
+    (->> (update triad :third (if is-minor dec identity))
+      (map-values dec)
+      (map-values scale)
+      vals)))
 
-
-(defn init
-  "Called on page load."
-  []
-  (enable-console-print!)
-
-  (let [key-chan (async/chan)
-        state    (read-chords key-chan)
-        el       (.querySelector js/document ".chord")]
-
-    (.addEventListener
-      js/document
-      "keypress"
-      #(async/put! key-chan (.fromCharCode js/String (.-keyCode %))))
-
-    (add-watch state :watch #(set! (.-innerHTML el) %4))))
+(comment
+  (chord {:note "c"})
+  (chord {:note "c" :type [:minor "m"]})
+  (chord {:note "c" :pitch [:sharp "#"]})
+  (chord {:note "c" :pitch [:flat "b"]})
+  )
