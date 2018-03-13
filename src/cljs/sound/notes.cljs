@@ -4,6 +4,11 @@
 (defn base [n] (partial + n))
 
 
+(defn lower [scale octaves]
+  (base (- (scale)
+           (* 12 octaves))))
+
+
 (def c (base 60))
 (def d (base 62))
 (def e (base 64))
@@ -14,4 +19,10 @@
 
 
 (defn lookup [note]
-  ({:c c :d d :e e :f f :g g :a a :h h} (keyword note)))
+  ({:c (lower c 1)
+    :d (lower d 1)
+    :e (lower e 1)
+    :f (lower f 1)
+    :g (lower g 1)
+    :a (lower a 1)
+    :h (lower h 1)} (keyword note)))

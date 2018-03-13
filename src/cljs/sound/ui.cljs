@@ -1,6 +1,6 @@
 (ns sound.ui
   (:require [sound.chord :refer [chord]]
-            [sound.audio :refer [connect gain sine play]]
+            [sound.audio :refer [series sine gain env piano play]]
             [sound.core :refer [midi->hz round]]
             [sound.spec :refer [read-chord]]
             [cljs.core.async :as async :include-macros true]))
@@ -34,9 +34,7 @@
 
   (let [key-chan (async/chan)
         state    (read-chords key-chan)
-        el       (.querySelector js/document ".chord")
-        ctx      (new js/window.AudioContext)
-        stop-fns (atom [])]
+        el       (.querySelector js/document ".chord")]
 
     (.addEventListener
       js/document
@@ -45,11 +43,9 @@
 
     (add-watch state :watch (fn [_ _ _ note]
                               (set! (.-innerHTML el) note)
-                              (doseq [f @stop-fns] (f))
-                              (let [stoppers (->> note
-                                               (chord)
-                                               (map midi->hz)
-                                               (map (partial play ctx))
-                                               doall)]
-                                (js/setTimeout #(doseq [f stoppers] (f)) 1500)
-                                (reset! stop-fns stoppers))))))
+                              (->> note
+                                (chord)
+                                (map midi->hz)
+                                (map piano)
+                                (map play)
+                                doall)))))

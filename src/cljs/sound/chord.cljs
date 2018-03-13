@@ -11,23 +11,28 @@
              [k (f v)])))
 
 
+(defn property [p note]
+  (-> note p first))
+
+
 (defn chord [note]
-  (let [scale     (-> (:note note) lookup)
-        type-map  (into {} [(:type note)])
-        pitch-map (into {} [(:pitch note)])
-        is-minor  (:minor type-map)
-        is-sharp  (:sharp pitch-map)
-        is-flat   (:flat pitch-map)
-        triad     (cond
-                    is-sharp (map-values inc triad)
-                    is-flat  (map-values dec triad)
-                    :else    triad)]
-    (->> (update triad :third (if is-minor dec identity))
+  (let [scale      (-> (:note note) lookup)
+        note-type  (property :type note)
+        note-pitch (property :pitch note)
+        _          (println note-type)
+        triad      (cond
+                     (= :sharp note-pitch) (map-values inc triad)
+                     (= :flat note-pitch)  (map-values dec triad)
+                     :else                 triad)]
+    (->> (update triad :third (if (= :minor note-type) dec identity))
       (map-values dec)
       (map-values scale)
+      ;;((fn [v] (println v) v))
       vals)))
 
+
 (comment
+  (chord {:note "c"})
   (chord {:note "c"})
   (chord {:note "c" :type [:minor "m"]})
   (chord {:note "c" :pitch [:sharp "#"]})
